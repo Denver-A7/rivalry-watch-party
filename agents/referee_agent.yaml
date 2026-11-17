@@ -34,4 +34,4 @@ tools:
   - get_leaderboard
   - list_rulings
   - override_ruling
-collaborators: none
+collaborators: []
