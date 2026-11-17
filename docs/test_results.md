@@ -48,10 +48,10 @@ The 20 predictions cover all three prediction types across a range of `made_afte
 | Late prediction (made after the answer was already known) is not counted | PASS |
 | Dispute by a non-organizer is refused | PASS |
 | Dispute by the organizer changes the ruling and logs the old status | PASS |
-| Tie game gives not_counted for game_winner | NOT TESTED |
+| Tie game gives not_counted for game_winner | PASS (test_scoring.py::TestDecideGameWinner::test_not_counted_tie, test_scoring.py::TestScoreOpenPredictions::test_game_winner_tie) |
 | game_end arrives before any score for a next_score prediction | PASS |
-| Live source returns an error (not enabled yet) | NOT TESTED |
-| Leaderboard sorts by points high to low across multiple games | NOT TESTED |
+| Live source returns an error (not enabled yet) | PASS (test_game_data.py::TestLiveMode::test_live_mode_returns_error) |
+| Leaderboard sorts by points high to low across multiple games | PASS (test_rulings.py::TestGetLeaderboard::test_sorted_high_to_low, test_rulings.py::TestGetLeaderboard::test_all_games_combines_scores) |
 | HTTP 409 conflict on Cloudant write triggers one retry | NOT TESTED |
 
 ---
