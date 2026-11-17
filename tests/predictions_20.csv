@@ -1,0 +1,21 @@
+id,player,text,prediction_type,team,made_after_sequence,expected_status
+1,Zara Okafor,I think KC will win the whole game,game_winner,KC,0,right
+2,Marcus Lund,BAL is going to take this one,game_winner,BAL,0,wrong
+3,Priya Nath,KC wins for sure,game_winner,KC,5,right
+4,Tomás Vega,I say BAL takes the W,game_winner,BAL,10,wrong
+5,Yuki Tanabe,KC all the way even now,game_winner,KC,19,right
+6,Fiona Brecht,BAL will win this game,game_winner,BAL,20,not_counted
+7,Darnell Shaw,KC is definitely winning,game_winner,KC,20,not_counted
+8,Leila Farouk,BAL is coming back to win,game_winner,BAL,15,wrong
+9,Zara Okafor,BAL will score before the half ends,scores_before_half,BAL,0,right
+10,Marcus Lund,KC scores before halftime,scores_before_half,KC,0,right
+11,Priya Nath,BAL will score before the half ends,scores_before_half,BAL,3,not_counted
+12,Tomás Vega,KC scores before halftime for sure,scores_before_half,KC,4,not_counted
+13,Yuki Tanabe,BAL scores in the first half,scores_before_half,BAL,9,not_counted
+14,Fiona Brecht,KC scores before the half,scores_before_half,KC,1,right
+15,Darnell Shaw,BAL scores next,next_score,BAL,0,right
+16,Leila Farouk,KC scores next,next_score,KC,0,wrong
+17,Zara Okafor,KC will score next,next_score,KC,5,right
+18,Marcus Lund,BAL scores next,next_score,BAL,5,wrong
+19,Priya Nath,KC gets the next score,next_score,KC,18,wrong
+20,Tomás Vega,BAL scores next and ties it up,next_score,BAL,19,not_counted
