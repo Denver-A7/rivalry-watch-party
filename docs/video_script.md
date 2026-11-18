@@ -2,6 +2,7 @@
 
 Length: 3 minutes
 Format: Say / Show
+Slides are not required. Record the demo screen and say the Say text as the voiceover. Show the architecture diagram during The Solution.
 
 ---
 
@@ -11,9 +12,8 @@ Format: Say / Show
 
 Friends watch the same game from different places.
 They text predictions to each other all game long.
-Who said what? Who was right?
-Nobody keeps score. The fun fades fast.
-There is no easy way to track predictions, check them against what actually happened, and give everyone a fair result with a reason.
+Nobody keeps score and nobody gets a reason.
+The fun fades fast.
 
 **Show:**
 
@@ -33,6 +33,7 @@ Our users are friends who watch the same game from different places.
 They want to make predictions and find out if they were right.
 They do not want to manage a spreadsheet.
 They do not want to wait until the game ends.
+Group chats and spreadsheets do not check predictions against the game, and they do not explain a result.
 They want a ruling and a reason right away.
 This is a fun tool. It is not a betting tool. No money is involved.
 
@@ -55,6 +56,8 @@ The Referee Agent reads each new game event, runs the scoring rules in code, and
 Seven tools connect the agents to one IBM Cloudant database.
 The scoring rules live in code. The language model never decides right or wrong.
 Every ruling is fair and explainable.
+Only the organizer can change a ruling, and the old ruling is kept.
+There is no betting, and the game data is open and credited.
 
 **Show:**
 
@@ -99,7 +102,7 @@ Agent reply: prediction saved, type is next_score, team is BAL.
 **Say:**
 
 We are using a recorded game for this demo.
-The game data comes from nflverse. It is used here with permission.
+The game data comes from nflverse, under the CC BY 4.0 license.
 Each check moves the game forward by one event.
 We skip ahead to the end of the game.
 The Referee Agent reads each event, checks that it is new and complete, and updates the game state.
@@ -165,6 +168,7 @@ Show the agent reply. It lists all three rulings. Ana's ruling shows the change:
 
 This prototype works with a recorded game.
 Our next step is to connect a live game data source.
+Try it with your own friends.
 We also want to add more prediction types when the data supports them.
 
 IBM Bob helped us plan the agent design, write the tool code, and run all 108 tests.
