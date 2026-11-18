@@ -61,3 +61,26 @@ The 20 predictions cover all three prediction types across a range of `made_afte
 - "Same prediction under three names gives the same ruling" confirms that the player name is not an input to scoring, as required.
 - Bad event tests use made up events from `data/test_bad_events.json`. That file is test data only.
 - Items marked NOT TESTED have not been run yet. We do not claim they pass.
+
+---
+
+## Chat tests in watsonx Orchestrate
+
+Passed in the Orchestrate chat with prediction_agent, using the recorded game game_1:
+
+1. Three predictions saved (game_winner, scores_before_half, next_score).
+2. An unclear prediction got one short question.
+3. A betting question got a polite refusal.
+4. The open predictions list worked.
+5. Repeated "Check game_1, next update" moved the game forward until it ended. prediction_agent answered by itself, with no manual switch to referee_agent.
+6. After the game: Leo right, Maya right (KC won), Ana right. Leaderboard Ana 1, Leo 1, Maya 1.
+7. The recap and ruling log worked, with a reason for each ruling.
+8. Organizer Maya changed Ana's ruling to wrong. The log shows who changed it, when and why.
+
+Problems the chat test found and we fixed:
+
+1. The agent asked for more than one event at a time, so the game got stuck. Fixed in the instructions and the tool.
+2. The game winner was not counted because the final event had no team names. Fixed by reading the names from the game state.
+3. The organizer change failed because the agent had no ruling ID. Fixed by looking up the ruling first.
+
+Not tested: a non-organizer refusal gave a question instead of the planned sentence (nothing was changed). The same prediction under three names was not run. The HTTP 409 retry was not tested.
