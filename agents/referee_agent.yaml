@@ -20,7 +20,15 @@ instructions: |
   4. For each new ruling, write one line: player, the prediction, the event that decided it, the status (right, wrong or not counted), the reason from the tool exactly as given, and the points.
   5. Then call get_leaderboard and show a short table.
   6. If someone asks for the recap or the game is final: call list_rulings and get_leaderboard. Write a recap of at most 120 words: the final score, who leads, and the most important rulings. Use only facts from the tool results.
-  7. If someone disputes a ruling: do not change it yourself. Ask who is asking. Call override_ruling with ruling_id, new_status, requested_by and reason only if the person gives a new status and a reason. Tell them the result. If the tool says the person is not the organizer, say that only the person who set up the watch party can change a ruling. Say that every change is saved in the ruling log.
+  7. If someone disputes a ruling:
+     a. Ask who is asking and what new status they want and why, if those are not already in the message.
+     b. If the person is not the organizer, reply exactly: "Only the organizer, [organizer name], can change a ruling." Do not say the request will be forwarded or escalated. Stop here.
+     c. To find the organizer name: call list_rulings for the game and group, then read the game_state organizer field from any ruling, or ask the person to confirm who the organizer is if the rulings list is empty.
+     d. Call list_rulings with the game_id and group_id to get the ruling log.
+     e. Find the ruling that matches the player name and prediction type the person described.
+     f. Take the ruling_id from that ruling document.
+     g. Call override_ruling with that ruling_id, the new_status, requested_by, and reason.
+     h. Tell the person the result in one or two short sentences. Say that the change is saved in the ruling log.
   8. If someone asks to see the log: call list_rulings.
 
   Rules:

@@ -549,3 +549,78 @@ class TestOverrideRuling:
         assert saved["changes"][1]["old_status"] == "right"
         assert saved["status"] == "not_counted"
         assert saved["points"] == 0
+
+
+# ===========================================================================
+# Tests: dispute workflow helpers
+# (These tests verify the tool behaviours that referee_agent step 7 relies on:
+#  finding a ruling by player + prediction_type, and naming the organizer in
+#  a non-organizer refusal.)
+# ===========================================================================
+
+class TestDisputeWorkflow:
+
+    def test_list_rulings_exposes_ruling_id_for_player_and_type(self, monkeypatch):
+        """list_rulings returns a ruling_id the agent can pass to override_ruling.
+
+        The agent must call list_rulings first, find the ruling that matches the
+        player name and prediction_type the organizer described, and then read
+        the ruling_id from that document.
+        """
+        fake = FakeCloudant()
+        # Ana has a next_score ruling; Kai has a game_winner ruling.
+        ana_ruling = _ruling(
+            "ana1",
+            player="Ana",
+            prediction_type="next_score",
+            status="right",
+            points=1,
+            group_id="friends1",
+        )
+        kai_ruling = _ruling(
+            "kai1",
+            player="Kai",
+            prediction_type="game_winner",
+            status="wrong",
+            points=0,
+            group_id="friends1",
+        )
+        fake.seed(DB, ana_ruling)
+        fake.seed(DB, kai_ruling)
+        _apply_lr_patches(monkeypatch, fake)
+
+        result = lr.list_rulings.fn(game_id=GAME_ID, group_id="friends1")
+
+        assert result["ok"] is True
+        # The agent can find Ana's next_score ruling and read its ruling_id.
+        matched = [
+            r for r in result["rulings"]
+            if r["player"] == "Ana" and r["prediction_type"] == "next_score"
+        ]
+        assert len(matched) == 1
+        assert matched[0]["ruling_id"] == ana_ruling["_id"]
+
+    def test_non_organizer_refusal_names_organizer(self, monkeypatch):
+        """override_ruling error message includes the organizer's name.
+
+        referee_agent step 7b must include the organizer name in the reply.
+        The name comes from the error returned by override_ruling, so the
+        tool must include it.
+        """
+        fake = FakeCloudant()
+        r = _ruling("p1", status="right", points=1)
+        fake.seed(DB, _game_state(organizer=ORGANIZER))
+        fake.seed(DB, r)
+        _apply_ovr_patches(monkeypatch, fake)
+
+        result = ovr.override_ruling.fn(
+            ruling_id=r["_id"],
+            new_status="wrong",
+            requested_by="NotTheOrganizer",
+            reason="I disagree.",
+        )
+
+        assert result["ok"] is False
+        # The organizer's name must appear in the error so the agent can
+        # include it in the reply ("Only the organizer, Morgan, can change a ruling.").
+        assert ORGANIZER in result["error"]
