@@ -521,3 +521,96 @@ class TestScoreOpenPredictions:
         points_set = {r["points"] for r in result["new_rulings"]}
         assert len(statuses) == 1, f"Players got different statuses: {statuses}"
         assert len(points_set) == 1, f"Players got different points: {points_set}"
+
+
+    def test_game_winner_right_without_team_fields_on_event(self, monkeypatch):
+        """
+        game_end events seeded from the JSON file do not carry home_team or
+        away_team fields. The scoring tool must still rule the game_winner
+        prediction correctly by reading team names from game_state.
+
+        This replicates the real Cloudant state after seed_recorded_game.py
+        and reset_game.py run: game_state has home_team/away_team, but the
+        game_event documents do not.
+        """
+        fake = FakeCloudant()
+
+        # Build events without home_team / away_team (as the JSON file has them).
+        def _event_no_teams(seq: int, event_type: str, team=None, home_score=0, away_score=0):
+            return {
+                "_id": f"game_event:{GAME_ID}:{seq:05d}",
+                "type": "game_event",
+                "game_id": GAME_ID,
+                "event_id": f"evt_{seq}",
+                "sequence": seq,
+                "event_type": event_type,
+                "team": team,
+                "points": None,
+                "home_score": home_score,
+                "away_score": away_score,
+                "period": 1,
+                "clock": "00:00",
+                "description": f"Event {seq}",
+                "source": "recorded",
+                # home_team and away_team intentionally omitted
+            }
+
+        predictions = [_prediction("p1", "game_winner", HOME)]
+        events = [
+            _event_no_teams(1, "score", team=HOME, home_score=3, away_score=0),
+            _event_no_teams(2, "game_end", home_score=3, away_score=0),
+        ]
+        self._setup(fake, predictions, events)
+        _apply_patches(monkeypatch, fake)
+
+        result = sop.score_open_predictions.fn(GAME_ID)
+
+        assert result["ok"] is True
+        assert len(result["new_rulings"]) == 1
+        ruling = result["new_rulings"][0]
+        # Must be right (HOME won), not not_counted.
+        assert ruling["status"] == "right", (
+            f"Expected 'right' but got '{ruling['status']}': {ruling['reason']}"
+        )
+        assert ruling["points"] == sop.POINTS_RIGHT
+
+    def test_game_winner_wrong_without_team_fields_on_event(self, monkeypatch):
+        """
+        Same as above but HOME predicted and AWAY won — must be 'wrong'.
+        """
+        fake = FakeCloudant()
+
+        def _event_no_teams(seq, event_type, team=None, home_score=0, away_score=0):
+            return {
+                "_id": f"game_event:{GAME_ID}:{seq:05d}",
+                "type": "game_event",
+                "game_id": GAME_ID,
+                "event_id": f"evt_{seq}",
+                "sequence": seq,
+                "event_type": event_type,
+                "team": team,
+                "points": None,
+                "home_score": home_score,
+                "away_score": away_score,
+                "period": 1,
+                "clock": "00:00",
+                "description": f"Event {seq}",
+                "source": "recorded",
+            }
+
+        predictions = [_prediction("p1", "game_winner", HOME)]
+        events = [
+            _event_no_teams(1, "score", team=AWAY, home_score=0, away_score=3),
+            _event_no_teams(2, "game_end", home_score=0, away_score=3),
+        ]
+        self._setup(fake, predictions, events)
+        _apply_patches(monkeypatch, fake)
+
+        result = sop.score_open_predictions.fn(GAME_ID)
+
+        assert result["ok"] is True
+        ruling = result["new_rulings"][0]
+        assert ruling["status"] == "wrong", (
+            f"Expected 'wrong' but got '{ruling['status']}': {ruling['reason']}"
+        )
+        assert ruling["points"] == 0

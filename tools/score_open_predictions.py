@@ -309,9 +309,25 @@ def score_open_predictions(game_id: str) -> dict:
         if not open_predictions:
             return {"ok": True, "new_rulings": [], "still_open": 0}
 
+        # Read game_state to get the team names.
+        state_id = f"game_state:{game_id}"
+        game_state = _get_doc(base_url, database, state_id, token)
+        home_team = game_state["home_team"] if game_state else None
+        away_team = game_state["away_team"] if game_state else None
+
         # Read all accepted game events for this game, ordered by sequence.
         all_events = _all_docs_by_prefix(base_url, database, f"game_event:{game_id}:", token)
         events = sorted(all_events, key=lambda e: e["sequence"])
+
+        # Stamp home_team and away_team onto any event that is missing them.
+        # Events seeded from the JSON file do not carry these fields; the
+        # scoring tool needs them to identify the winner from a game_end event.
+        if home_team and away_team:
+            for ev in events:
+                if "home_team" not in ev:
+                    ev["home_team"] = home_team
+                if "away_team" not in ev:
+                    ev["away_team"] = away_team
 
         new_rulings = []
         still_open = 0
