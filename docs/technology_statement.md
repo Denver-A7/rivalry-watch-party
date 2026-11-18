@@ -27,8 +27,7 @@ right or wrong. All rulings come from the Scoring tool in code.
 
 ## The seven tools
 
-1. save_prediction saves a friend's prediction and records the game sequence
-   at the time it was saved.
+1. save_prediction saves a prediction and records the game sequence at save time.
 2. list_open_predictions returns all undecided predictions.
 3. get_next_game_events reads the next events, checks each one is new and
    valid, and updates the game state.
@@ -59,15 +58,20 @@ source with a compatible license is confirmed.
 
 ## What we tested
 
-104 unit tests pass across five suites: scoring, game data, predictions,
-rulings, and data conversion. A prediction check ran 20 predictions through
-the Scoring tool on the recorded game and matched 20 of 20 against
-hand-worked expected results. CHECK: chat tests in Orchestrate are not
-finished yet.
+108 unit tests pass across five suites. A prediction check ran 20 predictions
+through the Scoring tool on the recorded game and matched all 20 against
+hand-worked expected results.
+
+We ran a chat test in Orchestrate with prediction_agent using the recorded game
+game_1. Three predictions were saved, the open list worked, the game moved
+forward one event at a time until it ended, and all three players were ruled
+correctly. The organizer changed one ruling and the log recorded the change.
+The chat test found three problems the unit tests missed, and we fixed them
+with Bob.
 
 ## Limits
 
-The live data mode is not built and returns an error until a source is
+The live data mode is not built. It returns an error until a source is
 confirmed. The HTTP 409 conflict retry has not been tested end to end. The
 scoring rules cover three prediction types. New types can be added after the
 team confirms the dataset.
