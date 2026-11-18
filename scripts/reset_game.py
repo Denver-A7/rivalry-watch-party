@@ -20,16 +20,22 @@ This script does not change scripts/seed_recorded_game.py.
 import os
 import sys
 import requests
+from dotenv import load_dotenv
 
 
 # ---------------------------------------------------------------------------
-# Credentials helper (same pattern as the tool files)
+# Credentials helper (same pattern as check_cloudant.py)
 # ---------------------------------------------------------------------------
 
 def _get_creds() -> tuple[str, str, str]:
-    """Return (url, apikey, database) from environment variables."""
-    url = os.environ["CLOUDANT_URL"]
-    apikey = os.environ["CLOUDANT_APIKEY"]
+    """Load URL, API key, and database from .env then environment."""
+    if os.path.exists(".env"):
+        load_dotenv(".env", override=False)
+    url = os.environ.get("CLOUDANT_URL", "").strip().rstrip("/")
+    apikey = os.environ.get("CLOUDANT_APIKEY", "").strip()
+    if not url or not apikey:
+        print("ERROR: CLOUDANT_URL or CLOUDANT_APIKEY is not set.")
+        sys.exit(1)
     database = os.environ.get("CLOUDANT_DB", "rivalry_watch_party")
     return url, apikey, database
 
