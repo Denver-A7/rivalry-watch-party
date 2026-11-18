@@ -479,3 +479,89 @@ class TestLiveMode:
 
         stored = fake.get_doc(DB, f"game_state:{GAME_ID}")
         assert stored["last_sequence"] == 3
+
+
+# ===========================================================================
+# Tests: full 20-event recorded game, one call at a time
+# ===========================================================================
+
+class TestFullRecordedGame:
+    """
+    Load all 20 events from data/recorded_game_game_1.json.
+    Seed game_state at last_sequence=0 (the state after a reset).
+    Call get_next_game_events(count=1) repeatedly until the game is final.
+    All 20 events must be accepted in order. The final score must be KC 27 BAL 20.
+    """
+
+    DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "recorded_game_game_1.json")
+
+    def _load_game_events(self) -> list[dict]:
+        """Load recorded events and add _id as seed_recorded_game.py would."""
+        import json as _json
+        with open(self.DATA_FILE, "r", encoding="utf-8") as f:
+            raw = _json.load(f)
+        result = []
+        for ev in raw:
+            d = dict(ev)
+            seq_str = str(ev["sequence"]).zfill(5)
+            d["_id"] = f"game_event:{GAME_ID}:{seq_str}"
+            result.append(d)
+        return result
+
+    def test_all_20_events_accepted_one_per_call(self, monkeypatch):
+        """
+        Calling count=1 twenty times accepts all 20 events in sequence order.
+        Simulates what happens after a reset when the agent uses count=1.
+        """
+        fake = FakeCloudant()
+        fake.seed(DB, _game_state(last_sequence=0, home_score=0, away_score=0, status="not_started"))
+        for ev in self._load_game_events():
+            fake.seed(DB, ev)
+        _apply_patches(monkeypatch, fake)
+
+        accepted_sequences = []
+        for _ in range(25):
+            result = gne.get_next_game_events.fn(GAME_ID, count=1)
+            assert result["ok"] is True
+            for ev in result["accepted"]:
+                accepted_sequences.append(ev["sequence"])
+            if result["game_state"]["status"] == "final":
+                break
+
+        assert accepted_sequences == list(range(1, 21)), (
+            f"Expected sequences 1-20, got {accepted_sequences}"
+        )
+        assert result["game_state"]["status"] == "final"
+        assert result["game_state"]["home_score"] == 27
+        assert result["game_state"]["away_score"] == 20
+
+    def test_large_count_capped_at_max(self, monkeypatch):
+        """
+        Passing count=20 must not drain all 20 events in one call.
+        The cap (MAX_COUNT=5) limits each call to at most 5 events.
+        After the first call, events 6-20 must still be available.
+        """
+        fake = FakeCloudant()
+        fake.seed(DB, _game_state(last_sequence=0, home_score=0, away_score=0, status="not_started"))
+        for ev in self._load_game_events():
+            fake.seed(DB, ev)
+        _apply_patches(monkeypatch, fake)
+
+        # First call with a large count — must be capped at MAX_COUNT (5).
+        result = gne.get_next_game_events.fn(GAME_ID, count=20)
+        assert result["ok"] is True
+        assert len(result["accepted"]) <= gne.MAX_COUNT, (
+            f"Expected at most {gne.MAX_COUNT} accepted, got {len(result['accepted'])}"
+        )
+
+        # Game must NOT be final after the first capped call.
+        assert result["game_state"]["status"] != "final", (
+            "Game should not be final after one capped call."
+        )
+
+        # Second call must still find new events.
+        result2 = gne.get_next_game_events.fn(GAME_ID, count=1)
+        assert result2["ok"] is True
+        assert len(result2["accepted"]) == 1, (
+            "Second call should find a new event after the capped first call."
+        )

@@ -160,6 +160,10 @@ expected_credentials = [
     {"app_id": "cloudant_creds", "type": ConnectionType.KEY_VALUE}
 ]
 
+# Maximum events returned in one call. Prevents a single call from draining
+# all remaining events and leaving nothing for later checks.
+MAX_COUNT = 5
+
 
 @tool
 def get_next_game_events(game_id: str, count: int = 1) -> dict:
@@ -171,7 +175,7 @@ def get_next_game_events(game_id: str, count: int = 1) -> dict:
 
     Args:
         game_id: The game identifier (e.g. game_1).
-        count: Number of events to fetch. Defaults to 1.
+        count: Number of events to fetch. Defaults to 1. Capped at 5.
 
     Returns:
         A dict with ok, accepted (list), rejected (list of event+reason),
@@ -180,6 +184,9 @@ def get_next_game_events(game_id: str, count: int = 1) -> dict:
     try:
         base_url, apikey, database = _get_creds()
         token = _get_iam_token(apikey)
+
+        # Cap count so one call cannot drain all remaining events at once.
+        count = min(count, MAX_COUNT)
 
         # Read game_state.
         state_id = f"game_state:{game_id}"
